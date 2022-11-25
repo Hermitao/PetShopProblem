@@ -35,17 +35,17 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <iostream>
 #include <list>
+
 
 class semaphore
 {
-//	long count;
+	long count;
 	std::mutex mtx;
 	std::condition_variable cv;
 	
 	public:
-	long count;
+	
 	semaphore(long const c = 0) : count(c) {}
 	
 	semaphore(semaphore const &) = delete;
@@ -73,21 +73,15 @@ class semaphore
 #define MAX_SLEEP_US 4
 #define NUM_THREADS 100
 
-semaphore* semaphoreInst = new semaphore(MAX_PETS);
-
-std::list<std::string> texts;
-
 void do_stuff(int const id, char const * kind, char const * action)
 {
-
-//	std::printf("pet #%d (%s) started %s...\n", id, kind, action);
+	std::printf("pet #%d (%s) started %s...\n", id, kind, action);
 	std::this_thread::sleep_for(std::chrono::microseconds(std::rand() % MAX_SLEEP_US));
-//	std::printf("pet #%d (%s) stopped %s...\n", id, kind, action);
+	std::printf("pet #%d (%s) stopped %s...\n", id, kind, action);
 }
 
 void cat(int const);
 void dog(int const);
-
 
 int main()
 {
@@ -102,12 +96,6 @@ int main()
 	{
 		pets.at(i).join();
 	}
-	
-
-	for (; !texts.empty(); texts.pop_front())
-    {
-        std::cout << "" << texts.front() << "'\n";
-    }
 	
 	return 0;
 }
@@ -124,10 +112,17 @@ int countEating = 0;
 int countCats = 0;
 int countDogs = 0;
 
+semaphore* semaphoreInst = new semaphore(MAX_PETS);
+std::list<std::string> texts;
+
+
+
 void cat(int const id)
 {
 	while(true)
 	{
+		do_stuff(id, "cat", "playing");
+
 		if (!bDog && bCat)
 		{
 			bDog = true;
@@ -153,7 +148,6 @@ void cat(int const id)
 		text += std::to_string(countDogs);
 		texts.push_back(text);
 		
-//		last = 0;
 		do_stuff(id, "cat", "eating");
 		countEating--;
 		countCats--;
@@ -171,9 +165,6 @@ void cat(int const id)
 		texts.push_back(text2);
 		
 		semaphoreInst->release();
-		
-//		petOrder.pop_front();
-		break;
 	}
 }
 
@@ -183,7 +174,7 @@ void dog(int const id)
 
 	while(true)
 	{
-//		do_stuff(id, "dog", "playing");
+		do_stuff(id, "dog", "playing");
 //		petOrder.push_back(1);
 		
 		if (!bCat && bDog)
@@ -230,11 +221,7 @@ void dog(int const id)
 		texts.push_back(text2);
 		
 		semaphoreInst->release();
-		
-		
-		
-//		petOrder.pop_front();
-		break;
 	}
 }
+
 
