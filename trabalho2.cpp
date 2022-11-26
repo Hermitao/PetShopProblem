@@ -36,6 +36,7 @@
 #include <thread>
 #include <vector>
 #include <list>
+#include <iostream>
 
 
 class semaphore
@@ -104,8 +105,6 @@ int main()
 //TODO
 //////////////////////////////////////////////////////////////
 
-//std::list<int> petOrder; // cat = 0 | dog = 1
-//int last = 0;
 bool bCat = true;
 bool bDog = false;
 int countEating = 0;
@@ -113,9 +112,30 @@ int countCats = 0;
 int countDogs = 0;
 
 semaphore* semaphoreInst = new semaphore(MAX_PETS);
-std::list<std::string> texts;
 
+class Peterson {
+	private:
+	volatile int interested[2] = {0, 0};
+	volatile int turn = 0;
+	
+	public:
+	
+	void lock(int tid) {
+		interested[tid] = 1;
+		
+		int other = 1 - tid;
+		turn = other;
+		
+		while (turn == other && interested[other])
+			;
+	}
+	
+	void unlock(int tid) {
+		interested[tid] = 0;
+	}
+};
 
+Peterson* peterson = new Peterson();
 
 void cat(int const id)
 {
@@ -129,98 +149,55 @@ void cat(int const id)
 			bCat = false;
 		}
 		
-//		while(bCat || (countEating != 0 && !bCat));	
 		while(bCat || countDogs > 0);
 		semaphoreInst->acquire();
+		
+		peterson->lock(id);
 		
 		countEating++;	
 		countCats++;
 		
-		std::string text = "pet ";
-		text += std::to_string(id);
-		text += "  ";
-		text += "cat";
-		text += "  ";
-		text += "  entrou";
-		text += "  countCats ";
-		text += std::to_string(countCats);
-		text += "  countDogs ";
-		text += std::to_string(countDogs);
-		texts.push_back(text);
-		
 		do_stuff(id, "cat", "eating");
 		countEating--;
 		countCats--;
-		
-		std::string text2 = "pet ";
-		text2 += std::to_string(id);
-		text2 += "  ";
-		text2 += "cat";
-		text2 += "  ";
-		text2 += "  saiu";
-		text2 += "  countCats ";
-		text2 += std::to_string(countCats);
-		text2 += "  countDogs ";
-		text2 += std::to_string(countDogs);
-		texts.push_back(text2);
+
+		peterson->unlock(id);
 		
 		semaphoreInst->release();
+		
+		break;
 	}
 }
 
 void dog(int const id)
 {
-//	semaphore semaphoreInst = semaphoreSingleton.getInst();
-
 	while(true)
 	{
 		do_stuff(id, "dog", "playing");
-//		petOrder.push_back(1);
-		
+
 		if (!bCat && bDog)
 		{
 			bCat = true;
 			bDog = false;
 		}
 		
-		
-//		while(bDog || (countEating != 0 && !bDog));
 		while(bDog || countCats > 0);
 		semaphoreInst->acquire();
+		
+		peterson->lock(id);
 		
 		countEating++;	
 		countDogs++;
 		
-		std::string text = "pet ";
-		text += std::to_string(id);
-		text += "  ";
-		text += "dog";
-		text += "  ";
-		text += "  entrou";
-		text += "  countCats ";
-		text += std::to_string(countCats);
-		text += "  countDogs ";
-		text += std::to_string(countDogs);
-		texts.push_back(text);
-		
-//		last = 1;
 		do_stuff(id, "dog", "eating");
 		countEating--;
 		countDogs--;
 		
-		std::string text2 = "pet ";
-		text2 += std::to_string(id);
-		text2 += "  ";
-		text2 += "dog";
-		text2 += "  ";
-		text2 += "  saiu";
-		text2 += "  countCats ";
-		text2 += std::to_string(countCats);
-		text2 += "  countDogs ";
-		text2 += std::to_string(countDogs);
-		texts.push_back(text2);
+		peterson->unlock(id);
 		
 		semaphoreInst->release();
+		
+		break;
 	}
 }
 
